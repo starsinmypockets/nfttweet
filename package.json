@@ -1,0 +1,16 @@
+{
+  "name": "nfttweet",
+  "version": "1.0.0",
+  "description": "Tweet new NFT tokens",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "twitter": "^1.7.1",
+    "web3": "^1.3.5"
+  }
+}
