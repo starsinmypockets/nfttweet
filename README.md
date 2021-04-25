@@ -46,8 +46,8 @@ The value will be interpreted as a string literal and may include variables of f
 
 ## Running the app
 
-* Use node version 10 (I suggest using [nvm](https://github.com/nvm-sh/nvm)
-* Runing the app using node:
+* Use node version 12 (I suggest using [nvm](https://github.com/nvm-sh/nvm))
+* Run the app using node:
 ```
 node index.js
 ```
