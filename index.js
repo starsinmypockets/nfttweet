@@ -2,21 +2,21 @@
 
 require('dotenv').config()
 
-const Web3 = require('web3')
-const Twitter = require('twitter')
-
 const {
   TWITTER_API_KEY,
   TWITTER_API_SECRET_KEY,
   TWITTER_ACCESS_TOKEN,
-  TWITTER_ACCESS_TOKEN_SECRET } = process.env
+  TWITTER_ACCESS_TOKEN_SECRET,
+  TWITTER_MESSAGE_TEMPLATE,
+  WSURL,
+  ETHERSCAN_ABI_URL,
+  ETHERSCAN_API_KEY,
+  CONTRACT_ADDRESS } = process.env
 
-console.log({
-  TWITTER_API_KEY,
-  TWITTER_API_SECRET_KEY,
-  TWITTER_ACCESS_TOKEN,
-  TWITTER_ACCESS_TOKEN_SECRET })
-
+const Web3 = require('web3')
+const Twitter = require('twitter')
+const restClient = require('node-rest-client-promise').Client();
+const web3 = new Web3(new Web3.providers.WebsocketProvider(WSURL))
 const twitterClient = new Twitter({
   consumer_key: TWITTER_API_KEY,
   consumer_secret: TWITTER_API_SECRET_KEY,
@@ -24,30 +24,33 @@ const twitterClient = new Twitter({
   access_token_secret: TWITTER_ACCESS_TOKEN_SECRET
 })
 
-const params = {screen_name: "nodejs"}
+function postToTwitter(transaction_hash) {
+  const msg = eval('`'+ TWITTER_MESSAGE_TEMPLATE + '`')
+  return twitterClient.post('statuses/update', {status: msg},  function(error, tweet, response) {
+      if(error) return console.log(JSON.stringify(error))
+  });
+}
 
-twitterClient.get('statuses/user_timeline', params, function(error, tweets, response) {
-  if (error) {
-    console.log("ERROR?", error)
-  } else {
-    console.log(tweets)
-  }
-})
+async function getContractAbi() {
+  const url = `${ETHERSCAN_ABI_URL}${CONTRACT_ADDRESS}&apiKey=${ETHERSCAN_API_KEY}`
+  const etherescan_response = await restClient.getPromise(url)
+  const contract_abi = JSON.parse(etherescan_response.data.result)
+  return contract_abi
+}
 
-const web3 = new Web3(new Web3.providers.WebsocketProvider(process.env.WSURL))
+async function eventQuery(){
+	const contract_abi = await getContractAbi()
+  const contract = new web3.eth.Contract(contract_abi, CONTRACT_ADDRESS)
+  let lastHash
+	contract.events.allEvents()
+		.on('data', (event) => {
+      console.log(event)
+      if (event.event === 'Deposit' && event.transactionHash !== lastHash) {
+        lastHash = event.transactionHash // dedupe
+        postToTwitter(event.transactionHash)
+      }
+		})
+		.on('error', console.error)
+}
 
-const subscription = web3.eth.subscribe('newBlockHeaders', (error, blockHeader) => {
-  if (error) return console.error(error)
-
-  console.log('Successfully subscribed!', blockHeader)
-}).on('data', (blockHeader) => {
-  console.log('data: ', blockHeader)
-})
-
-// unsubscribes the subscription
-/*
-subscription.unsubscribe((error, success) => {
-  if (error) return console.error(error);
-
-  console.log('Successfully unsubscribed!');
-}); */
+eventQuery()
