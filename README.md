@@ -4,6 +4,13 @@ Monitors an NFT contract for `Mint` events
 
 ## Setup
 
+After configuring, and installing dependencies  run `npm run start` to start the service
+
+### Dependencies
+
+* Use node version 12
+* run `npm install`
+
 ### Config
 
 * Copy `sample.env` to `.env`
